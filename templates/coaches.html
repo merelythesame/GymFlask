@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <title>Trainers</title>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <div class="container mt-4">
+        <div class="text-center mb-4">
+            <h1>Тренери</h1>
+        </div>
+        <div class="row g-4">
+            {% for coach in coaches %}
+                <div class="col-lg-3 col-md-4 col-sm-6 d-flex justify-content-center">
+                    <div class="card" style="width: 18rem;">
+                        <img src="./static/img/{{ coach['photo'] }}" class="card-img-top" alt="{{ coach['fullname'] }}" height="300">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <h5 class="card-title">{{ coach['fullname'] }}</h5>
+                            <p class="card-text">{{ coach['speciality'] }}</p>
+                            <p class="card-text">Номер телефону: {{ coach['phonenumber'] }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
