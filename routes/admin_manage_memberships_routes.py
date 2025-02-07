@@ -1,34 +1,24 @@
 from sqlalchemy.sql import text
-from sqlalchemy.orm import sessionmaker
 from flask import render_template, redirect, url_for
+from services.AdminService import AdminService
 from services.forms import AddMembershipForm
 from services.data_obtainer import get_all_available_memberships
 
 
-def get_db_session(db, app):
-    admin_engine = db.get_engine(app, bind='admin')
-    Session = sessionmaker(bind=admin_engine)
-    return Session()
-
-
-def execute_db_query(session, query, params=None):
-    session.execute(text(query), params or {})
-    session.commit()
-
-
 def manage_memberships_route(db, app):
+    admin_service = AdminService(db, app)
+    session = admin_service.get_db_session()
     memberships = get_all_available_memberships(db)
     form = AddMembershipForm()
 
     if form.validate_on_submit():
-        session = get_db_session(db, app)
         params = {
             'type': form.type.data,
             'price': form.price.data,
             'description': form.description.data,
             'hascoach': form.hascoach.data
         }
-        execute_db_query(session, """CALL InsertAvailableMembership(:type, :price, :description, :hascoach)""", params)
+        admin_service.execute_db_query(session, """CALL InsertAvailableMembership(:type, :price, :description, :hascoach)""", params)
         session.close()
         return redirect(url_for('.manage_memberships'))
 
@@ -36,7 +26,8 @@ def manage_memberships_route(db, app):
 
 
 def edit_membership_route(membership_id, db, app):
-    session = get_db_session(db, app)
+    admin_service = AdminService(db, app)
+    session = admin_service.get_db_session()
     membership_raw = session.execute(text("""SELECT * FROM AvailableMemberships WHERE membershipId = :membership_id"""),
                                     {'membership_id': membership_id}).fetchone()
 
@@ -62,7 +53,7 @@ def edit_membership_route(membership_id, db, app):
             'description': form.description.data,
             'hascoach': form.hascoach.data
         }
-        execute_db_query(session, """CALL UpdateAvailableMembership(:membership_id, :type, :price, :description, :hascoach)""", params)
+        admin_service.execute_db_query(session, """CALL UpdateAvailableMembership(:membership_id, :type, :price, :description, :hascoach)""", params)
         session.close()
         return redirect(url_for('.manage_memberships'))
 
@@ -71,7 +62,8 @@ def edit_membership_route(membership_id, db, app):
 
 
 def delete_membership_route(membership_id, db, app):
-    session = get_db_session(db, app)
-    execute_db_query(session, """CALL DeleteAvailableMembership(:membership_id)""", {'membership_id': membership_id})
+    admin_service = AdminService(db, app)
+    session = admin_service.get_db_session()
+    admin_service.execute_db_query(session, """CALL DeleteAvailableMembership(:membership_id)""", {'membership_id': membership_id})
     session.close()
     return redirect(url_for('.manage_memberships'))
