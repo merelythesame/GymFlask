@@ -7,16 +7,11 @@ from routes.admin_manage_coaches_routes import edit_coaches_route, manage_coache
 from routes.admin_manage_memberships_routes import manage_memberships_route, edit_membership_route, delete_membership_route
 from routes.auth_routes import login_route, register_route
 from routes.user_routes import home_route, memberships_route, coaches_route, payments_route, logout_route
+from services.Config import Config
 from services.data_obtainer import load_user_data
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://public_user_account:p5rICIDxj0@localhost/gym'
-app.config['SQLALCHEMY_BINDS'] = {
-    'admin': 'postgresql://admin_user:SK23rKv0zf@localhost/gym'
-}
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'secret_key'
-app.config['UPLOAD_FOLDER'] = './static/img'
+app.config.from_object(Config)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 db = SQLAlchemy()
 db.init_app(app)
