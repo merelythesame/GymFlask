@@ -2,59 +2,23 @@ from flask import redirect, url_for, render_template
 from flask_login import logout_user, login_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from wtforms.validators import ValidationError
+from services.UserService import UserService
 from services.forms import LoginForm, RegisterForm
-from sqlalchemy.sql import text
 from services.data_obtainer import Member
 
 
-def execute_db_query(session, query, params=None, fetch_one=False, fetch_all=False, commit=False):
-    result = session.execute(text(query), params or {})
-
-    if fetch_one:
-        return result.fetchone()
-    if fetch_all:
-        return result.fetchall()
-    if commit:
-        session.commit()
-
-
-def get_user_by_phone_number(db, phone_number):
-    session = db.session
-    return execute_db_query(session, "SELECT * FROM Members WHERE phoneNumber = :phoneNumber;",
-                            {'phoneNumber': phone_number}, fetch_one=True)
-
-
-def get_user_details_by_id(db, member_id):
-    session = db.session
-    return execute_db_query(session, "SELECT * FROM getmemberdetailsbyid(:member_id);",
-                            {'member_id': member_id}, fetch_one=True)
-
-def insert_user(db, form, hashed_password):
-    return execute_db_query(
-        db.session,
-        """CALL InsertUser(:name, :surname, :phone, :password, :membershipId, :balance)""",
-        {
-            'name': form.name.data,
-            'surname': form.last_name.data,
-            'phone': form.phone_number.data,
-            'password': hashed_password,
-            'membershipId': None,
-            'balance': 0.00
-        },
-        commit=True
-    )
-
 def login_route(db):
+    user_service = UserService(db)
     form = LoginForm()
 
     if form.validate_on_submit():
         phone_number = form.phoneNumber.data
         input_password = form.password.data
 
-        user_record = get_user_by_phone_number(db, phone_number)
+        user_record = user_service.get_user_by_phone_number(phone_number)
 
         if user_record and check_password_hash(user_record.password, input_password):
-            member_details = get_user_details_by_id(db, user_record.memberid)
+            member_details = user_service.get_user_details_by_id(user_record.memberid)
 
             if member_details:
                 member = Member(
@@ -81,6 +45,7 @@ def login_route(db):
 
 
 def register_route(db):
+    user_service = UserService(db)
     form = RegisterForm()
 
     if form.validate_on_submit():
@@ -91,7 +56,7 @@ def register_route(db):
             return redirect(url_for('register'))
 
         hashed_password = generate_password_hash(form.password.data, method='scrypt')
-        insert_user(db, form, hashed_password)
+        user_service.insert_user(form, hashed_password)
 
         return redirect(url_for('login'))
 
